@@ -1,0 +1,155 @@
+
+/* Forced vertical scrollbar */ 
+html, body {
+	height: 100%;
+	margin: 0 0 1px;
+	padding: 0;
+}
+
+#sidebar {
+	/* Required */
+	width: 240px;
+	position: fixed;
+	right: 50%;
+	margin: 0 220px 0 0;
+	/* Editable */
+	top: 0px;
+	border-right: 1px solid black;
+	height: 100%;
+}
+
+#content {
+	/* Required */
+	width: 900px;
+	margin: 15px auto;
+	position: relative;
+}
+
+/* div, containing the entry list */
+#entries {
+	/* Required */
+	width: 640px;
+	float: right;
+	/* Editable */
+	font-family: sans-serif;
+}
+
+
+	/*
+	 * Sidebar
+	 */
+
+
+/* p, the page title */
+#pageTitle {
+	font-family: sans-serif;
+	font-size: 22pt;
+	font-weight: lighter;
+}
+
+/* img, the arrow images showing what is filtering the entries */
+img {
+	position: fixed;
+	z-index: 100;
+}
+
+/* the search box and tag list title */
+#searchTitle, #tagListTitle {
+	padding: 0;
+	margin: 20px 0 14px 10px;
+	font-family: sans-serif;
+	font-size: 14pt;
+}
+
+/* input, the search box */
+#searchBox {
+	padding: 2px;
+	width: 160px;
+	font-size: 11pt;
+	/* Custom border */
+	outline: none;
+	border: 1px solid dimgrey;
+}
+	#searchBox:hover {
+		border: 1px solid blue;
+	}
+
+/* p, the tag list */
+#tagList {
+	font-family: sans-serif;
+	font-size: 11pt;
+}
+
+/* p, containing the tag */
+.tag {
+	cursor: pointer;
+	margin: 4px;
+	text-decoration: none;
+	color: #888;
+	user-select: none;
+	-moz-user-select: none;
+	-webkit-user-select: none;
+}
+.tag:hover {
+	color: blue;
+}
+.tagSelected {
+	color: #111;
+	padding-left: 20px;
+}
+
+
+	/*
+	 * Entries
+	 */
+
+/* div, contains all the entries for a tag */
+.entrySection {
+
+}
+
+/* p, section title */
+.entrySectionHeader {
+	font-family: sans-serif;
+	font-size: 18pt;
+	color: navy;
+}
+
+/* div, contains the entry */
+.entryBlock {
+	padding: 10px;
+	border-top: 1px dashed grey;
+}
+
+/* ul, contains the word list for each entry  */
+.entryWordList {
+	padding-left: 40px;
+}
+
+/* li, contains each single word or set of sub-word spans */
+.entryWord {
+	margin: 1px 0px;
+	padding: 4px 4px;
+}
+	/* applied when highlighted */
+	.entryWordHighlighted {
+		background-color: #FFF666;
+	}
+
+/* span, contains each of the sub-words */
+.entrySubWord {
+
+}
+
+/* p, contains some info on that entry variation */
+.entryWordDesc {
+	padding: 2px 2px 2px 12px;
+	margin: 0;
+	font-size: 10pt;
+	color: #696969;/* dimgrey */
+}
+
+/* p, a description of the entry */
+.entryDesc {
+	padding: 8px 8px 12px 60px;
+}
