@@ -73,7 +73,6 @@ var dict = [
 			['pos','position',null],
 			['origin','Usually from where the object "begins", such as the top-left corner on modern display coordinate systems']
 		],
-		desc:'An objects position.',
 		tag:'Visual'
 	},
 	{
@@ -296,7 +295,7 @@ var dict = [
 		words:[
 			'add',
 			'append',
-			'push'
+			['push','pushBack',null]
 		],
 		desc:'Adds an element to the end of a linear data structure.',
 		tag:'Method Names'
@@ -346,12 +345,10 @@ var dict = [
 	},
 	{
 		word:'show',
-		desc:'Shows the object.',
 		tag:'Visual'
 	},
 	{
 		word:'hide',
-		desc:'Hides the object.',
 		tag:'Visual'
 	},
 	{
@@ -424,7 +421,7 @@ var dict = [
 			'destruct',
 			'dispose',
 			'erase',
-			['rem','remove',null]
+			['rm','remove',null]
 		],
 		tag:'Etc'
 	},
@@ -456,6 +453,10 @@ var dict = [
 		tag:'Etc'
 	},
 	{
+		word:['cap','capacity',null],
+		tag:'Etc'
+	},
+	{
 		words:[
 			['pos','position',null],
 			'offset'
@@ -464,17 +465,17 @@ var dict = [
 	},
 	{
 		word:['rand','random',null],
-		desc:'Returns a random number within a certain range.',
+		desc:'Produces a random number.',
 		tags:['Method Names','Math']
 	},
 	{
 		word:'round',
-		desc:'Rounds the specified number to a certain amount.',
+		desc:'Rounds a number to a certain amount.',
 		tags:['Method Names','Math']
 	},
 	{
 		word:'floor',
-		desc:'Truncates the fractional part of the specified number.',
+		desc:'Truncates the fractional part of a number.',
 		tags:['Method Names','Math']
 	}
 ];
