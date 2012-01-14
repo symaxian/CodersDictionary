@@ -1,5 +1,8 @@
 // Todo:
 
+	// If the user resizes the page then the arrows will no longer be positioned correctly.
+	//		Need to anchor the arrows horizontally relative to the page elements, not absolutely.
+
 	// More entries!
 
 	// Selected entry count somewhere on page?
@@ -19,11 +22,11 @@ $(function(){
 	// Uncompress the dictionary
 	uncompressDictionary();
 
-	// Position the searchbox arrow
-	$('#searchBox').bind('keyup',refreshAllEntries);
-
 	// Hide the arrows
 	$('#searchArrow, #tagArrow').hide();
+
+	// Refresh the entry list when the search box is edited
+	$('#searchBox').bind('keyup',refreshAllEntries);
 
 	// Accumulate a list of all tags that appear in the entries
 	for(var i=0;i<dict.length;i++)
@@ -34,7 +37,7 @@ $(function(){
 	// Sort the tag list
 	tagList.sort();
 
-	// Add the event handler to the all-tags 
+	// Add the click event to the "All" tag, removing the selected tag
 	$('#tag-all').click(function(e){
 		// Remove the current selected tag class
 		$('.tagSelected').removeClass('tagSelected');
@@ -47,13 +50,13 @@ $(function(){
 		refreshAllEntries();
 	});
 
-	// Create the tag list
+	// Get the tag list container, <p>
 	var tagListP = $('#tagList')[0];
 
 	// Loop through the tags
 	for(var tagIndex=0;tagIndex<tagList.length;tagIndex++){
 
-		// Create the tag paragraph
+		// Create the tag entry, <p>
 		var tagListEntry = document.createElement('p');
 		tagListEntry.className = 'tag';
 		tagListEntry.id = 'tag-'+tagIndex;
@@ -106,7 +109,6 @@ $(function(){
 			//Check if the entry has the current tag
 			if(dict[i].tags.indexOf(tagList[tagIndex]) > -1){
 
-				// Cache the entry
 				var entry = dict[i];
 	
 				// Create the entry block
@@ -125,6 +127,7 @@ $(function(){
 	
 					var word = entry.words[j];
 	
+					// Create the word element
 					var wordLi = document.createElement('li');
 					wordLi.className = 'entryWord';
 					wordList.appendChild(wordLi);
@@ -272,7 +275,7 @@ function unhighlightAll(){
 	$('.entryWordHighlighted').removeClass('entryWordHighlighted');
 }
 
-// Arrow
+// Arrow Hiding/Showing
 
 function showSearchArrow(){
 	// Get the sidebar element
