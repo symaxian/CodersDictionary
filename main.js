@@ -7,8 +7,7 @@
 
 	// Selected entry count somewhere on page?
 
-	// Hierarchical tags?
-		// Only one level, selected the parent tag would also select its children
+	// Include an option for fuzzy matching?
 
 
 // Some global vars
@@ -343,11 +342,14 @@ function uncompressDictionary(){
 		}
 		// Add null descriptions to single subwords and expand single words
 		else{
-			for(var wordI=0;wordI<entry.words.length;wordI++)
-				if(typeof entry.words[wordI] === 'string')
+			for(var wordI=0;wordI<entry.words.length;wordI++){
+				if(typeof entry.words[wordI] === 'string'){
 					entry.words[wordI] = [entry.words[wordI],null];
-				else if(entry.words[wordI].length === 1)
+				}
+				else if(entry.words[wordI].length === 1){
 					entry.words[wordI].push(null);
+				}
+			}
 		}
 		// Expand a single tag into an array
 		if(typeof entry.tag === 'string'){
@@ -355,10 +357,12 @@ function uncompressDictionary(){
 			delete entry.tag;
 		}
 		// Set an empty tags if undefined
-		else if(typeof entry.tags === 'undefined')
+		else if(typeof entry.tags === 'undefined'){
 			entry.tags = [];
+		}
 		// Set an empty description if undefined
-		if(typeof entry.desc === 'undefined')
+		if(typeof entry.desc === 'undefined'){
 			entry.desc = '';
+		}
 	}
 }

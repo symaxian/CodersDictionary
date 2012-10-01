@@ -477,5 +477,10 @@ var dict = [
 		word:'floor',
 		desc:'Truncates the fractional part of a number.',
 		tags:['Method Names','Math']
+	},
+	{
+		word:['ceil','ceiling',null],
+		desc:'Rounds a real number up to an integer.',
+		tags:['Method Names','Math']
 	}
 ];
