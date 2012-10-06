@@ -9,6 +9,7 @@
 
 	// Include an option for fuzzy matching?
 
+	// Links to other terms from within descriptions
 
 // Some global vars
 var tagList = [],

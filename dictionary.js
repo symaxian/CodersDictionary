@@ -4,11 +4,14 @@ var dict = [
 			['arg','argument',null],
 			['param','parameter',null]
 		],
-		desc:'An item passed into a function/method.',
+		desc:'A value passed into a function/method.',
 		tag:'Functions'
 	},
 	{
-		word:'class',
+		words:[
+			'class',
+			'prototype'
+		],
 		desc:'A template for an object.',
 		tag:'Objects'
 	},
@@ -45,7 +48,8 @@ var dict = [
 		words:[
 			'list',
 			'array',
-			'stack'
+			'vector',
+			['stack','Usually describes the functionality that the data structure is used for']
 		],
 		desc:'Common names for linear data structures.',
 		tag:'Data Structure'
@@ -246,18 +250,27 @@ var dict = [
 		tag:'Method Names'
 	},
 	{
+		words:[
+			['func','function',null],
+			['routine','subroutine',null],
+			['procedure',null]
+		],
+		desc:'A subroutine of code that performs a specific task',
+		tag:'Functions'
+	},
+	{
 		word:'method',
 		desc:'A function that belongs to and acts primarily on an object or certain type of object.',
-		tag:'Objects'
+		tags:['Functions','Objects']
 	},
 	{
 		word:'getter',
-		desc:'A method that returns a property of an object.',
+		desc:'A method that returns a property of an object.\nA getter is an accessor method.',
 		tags:['Functions','Objects']
 	},
 	{
 		word:'setter',
-		desc:'A method that sets a property of an object.',
+		desc:'A method that sets a property of an object.\nA setter is a mutator method.',
 		tags:['Functions','Objects']
 	},
 	{
@@ -273,15 +286,10 @@ var dict = [
 	{
 		words:[
 			'constructor',
-			'initiator'
+			['init','initiate',null]
 		],
-		desc:'A method called during/after the creation of a new object.',
+		desc:'A method that initiates an object.',
 		tags:['Functions','Objects']
-	},
-	{
-		word:['init','initiate',null],
-		desc:'A method that initiates an object, usually called after its construction.',
-		tags:['Method Names','Objects']
 	},
 	{
 		words:[
@@ -302,7 +310,7 @@ var dict = [
 	},
 	{
 		word:'insert',
-		desc:'Inserts an element to a certain position in a data structure.',
+		desc:'Inserts an element into a data structure.',
 		tag:'Method Names'
 	},
 	{
@@ -331,7 +339,7 @@ var dict = [
 			'slice',
 			'splice'
 		],
-		desc:'Returns a piece of a linear data structure.',
+		desc:'Extracts a section of a linear data structure.\nMay also insert a section to the structure.',
 		tag:'Method Names'
 	},
 	{
@@ -356,7 +364,7 @@ var dict = [
 			['a','alpha',null],
 			'opacity'
 		],
-		desc:'How transparent an object is.',
+		desc:'How transparent an object/image is.',
 		tag:'Visual'
 	},
 	{
@@ -399,7 +407,7 @@ var dict = [
 	},
 	{
 		word:'touch',
-		desc:'Updates the timestamp to the current time.',
+		desc:'Update the timestamp of a file to the current time.',
 		tag:'Files'
 	},
 	{
@@ -465,22 +473,22 @@ var dict = [
 	},
 	{
 		word:['rand','random',null],
-		desc:'Produces a random number.',
+		desc:'Produces a psuedo-random number.',
 		tags:['Method Names','Math']
 	},
 	{
 		word:'round',
-		desc:'Rounds a number to a certain amount.',
+		desc:'Round a number.',
 		tags:['Method Names','Math']
 	},
 	{
 		word:'floor',
-		desc:'Truncates the fractional part of a number.',
+		desc:'Truncate the fractional part of a number.',
 		tags:['Method Names','Math']
 	},
 	{
 		word:['ceil','ceiling',null],
-		desc:'Rounds a real number up to an integer.',
+		desc:'Round a real number up to an integer.',
 		tags:['Method Names','Math']
 	}
 ];

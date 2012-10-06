@@ -58,6 +58,10 @@ html, body {
 	color: blue;
 }
 
+#githubLink a:hover {
+	text-decoration: underline;
+}
+
 /* img, the arrow images showing what is filtering the entries */
 img {
 	position: fixed;
