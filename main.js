@@ -1,7 +1,9 @@
-// Todo:
+// FIXME:
 
-	// If the user resizes the page then the arrows will no longer be positioned correctly.
+	// Arrows are no longer positioned correctly after the page is resized
 	//		Need to anchor the arrows horizontally relative to the page elements, not absolutely.
+
+// TODO:
 
 	// More entries!
 
@@ -19,6 +21,8 @@ var tagList = [],
 
 $(function(){
 
+	var i, tagIndex;
+
 	// Uncompress the dictionary
 	uncompressDictionary();
 
@@ -29,15 +33,18 @@ $(function(){
 	$('#searchBox').bind('keyup',refreshAllEntries);
 
 	// Accumulate a list of all tags that appear in the entries
-	for(var i=0;i<dict.length;i++)
-		for(var tagIndex=0;tagIndex<dict[i].tags.length;tagIndex++)
-			if(tagList.indexOf(dict[i].tags[tagIndex]) < 0)
+	for(i=0;i<dict.length;i++){
+		for(tagIndex=0;tagIndex<dict[i].tags.length;tagIndex++){
+			if(tagList.indexOf(dict[i].tags[tagIndex]) < 0){
 				tagList.push(dict[i].tags[tagIndex]);
+			}
+		}
+	}
 
 	// Sort the tag list
 	tagList.sort();
 
-	// Add the click event to the "All" tag, removing the selected tag
+	// Add the click handler to the "All" tag, which removes the selected tag
 	$('#tag-all').click(function(e){
 		// Remove the current selected tag class
 		$('.tagSelected').removeClass('tagSelected');
@@ -53,41 +60,43 @@ $(function(){
 	// Get the tag list container, <p>
 	var tagListP = $('#tagList')[0];
 
+	// Create a click handler for the tag buttons
+	var clickHandler = function(e){
+		// Remove the current selected tag class
+		$('.tagSelected').removeClass('tagSelected');
+		// Get the tag index
+		var index = e.currentTarget.id.split('-')[1];
+		// Check if enabled/disabled
+		if(tagList[index] === selectedTag){
+			// Clear the selected tag
+			selectedTag = null;
+			// Hide the arrow
+			hideTagArrow();
+		}
+		else{
+			// Set the selected tag class
+			e.currentTarget.className = 'tag tagSelected';
+			selectedTag = tagList[index];
+			// Show the tag arrow
+			showTagArrow(e.currentTarget);
+		}
+		// Refresh the entries
+		refreshAllEntries();
+	};
+
+
+	entries = [];
+
 	// Loop through the tags
-	for(var tagIndex=0;tagIndex<tagList.length;tagIndex++){
+	for(tagIndex=0;tagIndex<tagList.length;tagIndex++){
 
 		// Create the tag entry, <p>
 		var tagListEntry = document.createElement('p');
 		tagListEntry.className = 'tag';
 		tagListEntry.id = 'tag-'+tagIndex;
 		$(tagListEntry).text(tagList[tagIndex]);
+		$(tagListEntry).click(clickHandler);
 		tagListP.appendChild(tagListEntry);
-
-		// Create a click handler to set/unset the tag
-		$(tagListEntry).click(
-			function(e){
-				// Remove the current selected tag class
-				$('.tagSelected').removeClass('tagSelected');
-				// Get the tag index
-				var index = e.currentTarget.id.split('-')[1];
-				// Check if enabled/disabled
-				if(tagList[index] === selectedTag){
-					// Clear the selected tag
-					selectedTag = null;
-					// Hide the arrow
-					hideTagArrow();
-				}
-				else{
-					// Set the selected tag class
-					e.currentTarget.className = 'tag tagSelected';
-					selectedTag = tagList[index];
-					// Show the tag arrow
-					showTagArrow(e.currentTarget);
-				}
-				// Refresh the entries
-				refreshAllEntries();
-			}
-		);
 
 		// Create a div for the entries
 
@@ -104,19 +113,26 @@ $(function(){
 		entrySection.appendChild(entrySectionHeader);
 
 		// Loop through the entries
-		for(var i=0;i<dict.length;i++)
+		for(i=0;i<dict.length;i++){
 
-			//Check if the entry has the current tag
+			// Check if the entry has the current tag
 			if(dict[i].tags.indexOf(tagList[tagIndex]) > -1){
 
 				var entry = dict[i];
-	
+
+				entries.push({
+					i: i,
+					words: entry.words,
+					desc: entry.desc,
+					tags: entry.tags
+				});
+
 				// Create the entry block
 				var block = document.createElement('div');
 				block.className = 'entryBlock';
-				block.id = "entry"+i;
+				block.id = "entry"+(entries.length-1);
 				entrySection.appendChild(block);
-		
+
 				// Create the word list for the entry
 				var wordList = document.createElement('ul');
 				wordList.className = 'entryWordList';
@@ -163,6 +179,8 @@ $(function(){
 
 			}
 
+		}
+
 	}
 
 });
@@ -186,10 +204,6 @@ function refreshAllEntries(){
 	if($('#searchBox').val()){
 		// Show the search arrow
 		showSearchArrow();
-		// Hide all the sections
-		$('.entrySection').hide();
-		// Hide all the entries
-		hideAll();
 		// Show the entries
 		showSearchedEntries();
 	}
@@ -202,72 +216,69 @@ function refreshAllEntries(){
 }
 
 function showSearchedEntries(){
-	// Get the filter text
-	var filter = $('#searchBox').val();
-	// Keep a list of visible sections
-	var visibleTags = [];
+	var i, wordI, tagI, entryVisible,
+		visibleTags = [],
+		filter = $('#searchBox').val();
 	// Loop through the entries
-	for(var i=0;i<dict.length;i++){
+	for(i=0;i<entries.length;i++){
 		// Cache the entry
-		var entry = dict[i];
-		// Check that the entry is tagged
-		if(isEntryTagged(entry)){
-			// Keep a flag to check if the entry is visible
-			entryVisible = false;
-			// Loop through each word in the entry
-			for(var wordIndex=0;wordIndex<entry.words.length;wordIndex++){
-				// Check if the word is visible
-				if(isWordVisible(entry.words[wordIndex],filter)){
-					// Highlight the word and set the entry as visible
-					$($('#entry'+i)[0].children[0].children[wordIndex]).addClass('entryWordHighlighted');
-					entryVisible = true;
-				}
-			}
-			// Check if the entry is visible
-			if(entryVisible){
-				// Show the entry and add the tags to the visible tag list
-				showEntry(i);
-				for(var tagI=0;tagI<entry.tags.length;tagI++){
-					if(visibleTags.indexOf(tagList.indexOf(entry.tags[tagI])) < 0){
-						visibleTags.push(entry.tags[tagI]);
-					}
-				}
+		var entry = entries[i];
+		// Keep a flag denoting if the entry is visible
+		entryVisible = false;
+		// Loop through each word in the entry
+		for(var wordIndex=0;wordIndex<entry.words.length;wordIndex++){
+			// Check if the word is visible
+			if(doesWordMatch(entry.words[wordIndex],filter)){
+				// Highlight the word and set the entry as visible
+				$($('#entry'+i)[0].children[0].children[wordIndex]).addClass('entryWordHighlighted');
+				entryVisible = true;
 			}
 		}
+		// Show or hide the entry
+		if(entryVisible){
+			showEntry(i);
+		}
+		else{
+			hideEntry(i);
+		}
 	}
-	// Show the sections for the visible tags
-	for(var tagI=0;tagI<visibleTags.length;tagI++)
-		$('#entrySection-'+tagList.indexOf(visibleTags[tagI])).show();
 }
 
-function isEntryTagged(entry){
+function isEntrySectionVisible(entry){
 	// Return true if all tags are selected
-	if(selectedTag === null)
+	if(selectedTag === null){
 		return true;
+	}
 	// Else loop through the entry's tags
-	for(var i=0;i<entry.tags.length;i++)
+	for(var i=0;i<entry.tags.length;i++){
 		// Return true if it matches the selected tag
-		if(selectedTag === entry.tags[i])
+		if(selectedTag === entry.tags[i]){
 			return true;
+		}
+	}
 	// Else no matches, return false
 	return false;
 }
 
-function isWordVisible(word,filter){
-	// Loop though each word, plus 1 for the description
-	for(var i=0;i<word.length-!searchWordDesc;i++)
-		// Check if its a string, it might be null for no word desc
-		if(typeof word[i] === 'string')
-			// Return true if its visible per the search
-			if(isStringVisible(word[i],filter))
-				return true;
+function doesWordMatch(word,filter){
+	// Loop though each word, minus 1 for the description
+	for(var i=0;i<word.length-1;i++){
+		// Return true if its visible per the search
+		if(doesStringMatch(word[i],filter)){
+			return true;
+		}
+	}
+	// Search the word desc
+	if(searchWordDesc && word[word.length-1] !== null && doesStringMatch(word[word.length-1],filter)){
+		return true;
+	}
 	// Else no matches, return false
 	return false;
 }
 
-function isStringVisible(string,filter){
+function doesStringMatch(string,filter){
 	// Use indexOf if case sensitive, else use a case insensitive RegExp
-	return (caseSensitiveSearch ? string.indexOf(filter) : string.search(new RegExp(filter,'i'))) > -1;
+	return (caseSensitiveSearch ? string.indexOf(filter) : string.search(new RegExp(filter,'i'))) >= 0;
 }
 
 function unhighlightAll(){
@@ -352,13 +363,9 @@ function uncompressDictionary(){
 				}
 			}
 		}
-		// Expand a single tag into an array
-		if(typeof entry.tag === 'string'){
-			entry.tags = [entry.tag];
-			delete entry.tag;
-		}
-		// Set an empty tags if undefined
-		else if(typeof entry.tags === 'undefined'){
+		// Set an empty tag array if undefined
+		if(typeof entry.tags === 'undefined'){
+			console.warn('Dictionary entry '+i+' is without tag array');
 			entry.tags = [];
 		}
 		// Set an empty description if undefined

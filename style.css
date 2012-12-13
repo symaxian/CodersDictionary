@@ -85,9 +85,10 @@ img {
 	outline: none;
 	border: 1px solid dimgrey;
 }
-	#searchBox:hover {
-		border: 1px solid blue;
-	}
+
+#searchBox:hover {
+	border: 1px solid blue;
+}
 
 /* p, the tag list */
 #tagList {
@@ -101,13 +102,16 @@ img {
 	margin: 4px;
 	text-decoration: none;
 	color: #888;
-	user-select: none;
-	-moz-user-select: none;
 	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
 }
+
 .tag:hover {
 	color: blue;
 }
+
 .tagSelected {
 	color: #111;
 	padding-left: 20px;
