@@ -13,7 +13,7 @@ html, body {
 	right: 50%;
 	margin: 0 220px 0 0;
 	/* Editable */
-	top: 0px;
+	top: 0;
 	border-right: 1px solid black;
 	height: 100%;
 }
@@ -34,11 +34,9 @@ html, body {
 	font-family: sans-serif;
 }
 
-
 	/*
 	 * Sidebar
 	 */
-
 
 /* p, the page title */
 #pageTitle {
@@ -83,7 +81,7 @@ img {
 	font-size: 11pt;
 	/* Custom border */
 	outline: none;
-	border: 1px solid dimgrey;
+	border: 1px solid #696969;
 }
 
 #searchBox:hover {
@@ -117,15 +115,9 @@ img {
 	padding-left: 20px;
 }
 
-
 	/*
 	 * Entries
 	 */
-
-/* div, contains all the entries for a tag */
-.entrySection {
-
-}
 
 /* p, section title */
 .entrySectionHeader {
@@ -137,7 +129,7 @@ img {
 /* div, contains the entry */
 .entryBlock {
 	padding: 10px;
-	border-top: 1px dashed grey;
+	border-top: 1px dashed #7f7f7f;
 }
 
 /* ul, contains the word list for each entry  */
@@ -147,17 +139,13 @@ img {
 
 /* li, contains each single word or set of sub-word spans */
 .entryWord {
-	margin: 1px 0px;
+	margin: 1px 0;
 	padding: 4px 4px;
 }
-	/* applied when highlighted */
-	.entryWordHighlighted {
-		background-color: #FFF666;
-	}
 
-/* span, contains each of the sub-words */
-.entrySubWord {
-
+/* applied when highlighted */
+.entryWordHighlighted {
+	background-color: #FFF666;
 }
 
 /* p, contains some info on that entry variation */
