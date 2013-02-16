@@ -1,11 +1,8 @@
-// FIXME:
-
-	// Arrows are no longer positioned correctly after the page is resized
-	//		Need to anchor the arrows horizontally relative to the page elements, not absolutely.
-
 // TODO:
 
 	// More entries!
+
+	// Find a way to sort entries, or reduce each entry to a single main word for sorting
 
 	// Selected entry count somewhere on page?
 
@@ -13,17 +10,39 @@
 
 	// Links to other terms from within descriptions
 
+	// Arrows should be anchored relative to the page elements, not absolutely.
+
 coders = {
 
-	tagList: [],
-	selectedTag: null,
+		// Settings
+
 	caseSensitiveSearch: false,
+
 	searchWordDesc: true,
-	entries: [],
+
+	editMode: false,
+
+		// Data
+
+	entries: null,
+
+	hoveredEntry: null,
+
+	tagList: null,
+
+	selectedTag: null,
+
+	selectedTagIndex: -1,
+
+		// Methods
+
+	warn: function(msg){
+		if(typeof console === 'object'){
+			console.warn('CodersDictionary: '+msg);
+		}
+	},
 
 	init: function(){
-
-		var i, tagIndex;
 
 		// Uncompress the dictionary
 		coders.uncompressDictionary();
@@ -34,7 +53,54 @@ coders = {
 		// Refresh the entry list when the search box is edited
 		$('#searchBox').bind('keyup',coders.refreshAllEntries);
 
+		// Add the click handler to the "All" tag, which removes the selected tag
+		$('#tag-all').click(function(e){
+			coders.selectTag(null);
+		});
+
+		window.onresize = function(){
+			coders.updateSearchArrow();
+			coders.updateTagArrow();
+		};
+
+		if(coders.editMode){
+			document.addEventListener('keydown',function(e){
+				var index = coders.hoveredEntry;
+				if(e.keyCode === 109){
+					// Numeric -
+					dict.push({
+						words: [['<word>','<desc>']],
+						desc: '<desc>',
+						tags: ['<tag>']
+					});
+					coders.updatePageEntries();
+				}
+				else if(e.keyCode === 107){
+					// Numeric +
+					dict[index].words.push(['<word>','<desc>']);
+					coders.updatePageEntries();
+				}
+				else if(e.keyCode === 13 && !dict[index].desc){
+					// Numeric Enter
+					dict[index].desc = '<desc>';
+					coders.updatePageEntries();
+				}
+			});
+		}
+
+		// Insert the entries onto the page
+		coders.updatePageEntries();
+
+	},
+
+	updatePageEntries: function(){
+
+		// Empty the tags and entries
+		$('#tagList').empty();
+		$('#entries').empty();
+
 		// Accumulate a list of all tags that appear in the entries
+		coders.tagList = [];
 		for(i=0;i<dict.length;i++){
 			for(tagIndex=0;tagIndex<dict[i].tags.length;tagIndex++){
 				if(coders.tagList.indexOf(dict[i].tags[tagIndex]) < 0){
@@ -46,292 +112,304 @@ coders = {
 		// Sort the tag list
 		coders.tagList.sort();
 
-		// Add the click handler to the "All" tag, which removes the selected tag
-		$('#tag-all').click(function(e){
-			// Remove the current selected tag class
-			$('.tagSelected').removeClass('tagSelected');
-			$(e.currentTarget).addClass('tagSelected');
-			// Clear the selected tag
-			coders.selectedTag = null;
-			// Hide the arrow
-			coders.hideTagArrow();
-			// Refresh the entries
-			coders.refreshAllEntries();
-		});
+		// Construct the page again
+		coders.insertPageEntries();
 
+		// Re-select the previously selected tag
+		coders.selectTag(coders.selectedTag);
+
+	},
+
+	insertPageEntries: function(){
+ 
 		// Get the tag list container, <p>
-		var tagListP = $('#tagList')[0];
+		var tagListDiv = $('#tagList')[0];
 
-		// Create a click handler for the tag buttons
-		var clickHandler = function(e){
-			// Remove the current selected tag class
-			$('.tagSelected').removeClass('tagSelected');
-			// Get the tag index
-			var index = e.currentTarget.id.split('-')[1];
-			// Check if enabled/disabled
-			if(coders.tagList[index] === coders.selectedTag){
-				// Clear the selected tag
-				coders.selectedTag = null;
-				// Hide the arrow
-				coders.hideTagArrow();
+		var tagClickHandler = function(e){
+			coders.selectTag($(this).text());
+		};
+
+		var entryHoverHandler = function(e){
+			coders.hoveredEntry = parseInt($(this).attr('data-entry-index'),10);
+		};
+
+		var wordEditHandler = function(e){
+			// Get the properties
+			var text = $(this).text();
+			var entryIndex = parseInt($(this).attr('data-entry-index'),10);
+			var wordIndex = parseInt($(this).attr('data-word-index'),10);
+			// Set the text, or delete the word if there is no text
+			if(text.length){
+				dict[entryIndex].words[wordIndex][0] = text;
 			}
 			else{
-				// Set the selected tag class
-				e.currentTarget.className = 'tag tagSelected';
-				coders.selectedTag = coders.tagList[index];
-				// Show the tag arrow
-				coders.showTagArrow(e.currentTarget);
+				// No text, delete the word
+				dict[entryIndex].words.splice(wordIndex,1);
+				// Delete the entry if there are no words left
+				if(dict[entryIndex].words.length === 0){
+					dict.splice(entryIndex,1);
+				}
+				// Rebuild the page
+				coders.updatePageEntries();
 			}
-			// Refresh the entries
-			coders.refreshAllEntries();
+		};
+
+		var wordDescEditHandler = function(e){
+			// Get the properties
+			var text = $(this).text();
+			var entryIndex = parseInt($(this).attr('data-entry-index'),10);
+			var wordIndex = parseInt($(this).attr('data-word-index'),10);
+			// Set the text, or null
+			if(text.length === 0){
+				text = null;
+			}
+			dict[entryIndex].words[wordIndex][1] = text;
+			if(text === null){
+				coders.updatePageEntries();
+			}
+		};
+
+		var descEditHandler = function(e){
+			// Get the properties
+			var text = $(this).text();
+			var entryIndex = parseInt($(this).attr('data-entry-index'),10);
+			// Set the text
+			dict[entryIndex].desc = text;
+		};
+
+		var tagsEditHandler = function(e){
+			// Get the properties
+			var entryIndex = parseInt($(this).attr('data-entry-index'),10);
+			var tags = $(this).text().split(',');
+			// Trim the tags
+			for(var i=0;i<tags.length;i++){
+				tags[i] = $.trim(tags[i]);
+			}
+			// Set the tags
+			dict[entryIndex].tags = tags;
+			coders.updatePageEntries();
 		};
 
 		// Loop through the tags
-		for(tagIndex=0;tagIndex<coders.tagList.length;tagIndex++){
+		for(var tagIndex=0;tagIndex<coders.tagList.length;tagIndex++){
 
-			// Create the tag entry, <p>
+			// Create the tag list entry, <p>
 			var tagListEntry = document.createElement('p');
 			tagListEntry.className = 'tag';
 			tagListEntry.id = 'tag-'+tagIndex;
 			$(tagListEntry).text(coders.tagList[tagIndex]);
-			$(tagListEntry).click(clickHandler);
-			tagListP.appendChild(tagListEntry);
+			$(tagListEntry).click(tagClickHandler);
+			tagListDiv.appendChild(tagListEntry);
 
-			// Create a div for the entries
+		}
 
-			var entrySection = document.createElement('div');
-			entrySection.className = 'entrySection';
-			entrySection.id = 'entrySection-'+tagIndex;
-			$('#entries')[0].appendChild(entrySection);
+		// Loop through the entries
+		for(var i=0;i<dict.length;i++){
 
-			// Create a header in the entry list
+			var entry = dict[i];
 
-			var entrySectionHeader = document.createElement('p');
-			entrySectionHeader.className = 'entrySectionHeader';
-			$(entrySectionHeader).text(coders.tagList[tagIndex]);
-			entrySection.appendChild(entrySectionHeader);
+			// Create the entry block
+			var block = document.createElement('div');
+			block.className = 'entryBlock';
+			block.id = 'entry'+i;
+			$(block).attr('data-entry-index',i);
+			$(block).hover(entryHoverHandler);
+			$('#entries')[0].appendChild(block);
+			// Add a title if editable
+			if(coders.editMode){
+				block.title = 'Entry: '+i;
+			}
 
-			// Loop through the entries
-			for(i=0;i<dict.length;i++){
+			// Create the word list for the entry
+			var wordList = document.createElement('ul');
+			wordList.className = 'entryWordList';
+			block.appendChild(wordList);
+	
+			// Loop through the words
+			for(var j=0;j<entry.words.length;j++){
 
-				// Check if the entry has the current tag
-				if(dict[i].tags.indexOf(coders.tagList[tagIndex]) > -1){
+				var word = entry.words[j];
 
-					var entry = dict[i];
+				// Create the word block element
+				var wordBlock = document.createElement('li');
+				wordBlock.className = 'entryWordBlock';
+				wordList.appendChild(wordBlock);
 
-					coders.entries.push({
-						i: i,
-						words: entry.words,
-						desc: entry.desc,
-						tags: entry.tags
-					});
+				// Create a span for the word
+				var wordSpan = document.createElement('span');
+				// Set the class and text, add it to the word block
+				wordSpan.className = 'entryWord';
+				$(wordSpan).text(word[0]);
+				wordBlock.appendChild(wordSpan);
+				// Add dictionary data if editable
+				if(coders.editMode){
+					$(wordSpan).attr('contentEditable','true');
+					$(wordSpan).attr('data-entry-index',i);
+					$(wordSpan).attr('data-word-index',j);
+					$(wordSpan).blur(wordEditHandler);
+				}
 
-					// Create the entry block
-					var block = document.createElement('div');
-					block.className = 'entryBlock';
-					block.id = "entry"+(coders.entries.length-1);
-					entrySection.appendChild(block);
-
-					// Create the word list for the entry
-					var wordList = document.createElement('ul');
-					wordList.className = 'entryWordList';
-					block.appendChild(wordList);
-			
-					// Loop through the words
-					for(var j=0;j<entry.words.length;j++){
-		
-						var word = entry.words[j];
-		
-						// Create the word element
-						var wordLi = document.createElement('li');
-						wordLi.className = 'entryWord';
-						wordList.appendChild(wordLi);
-		
-						// Loop through the subwords
-						for(var subWordIndex=0;subWordIndex<word.length-1;subWordIndex++){
-							var subWordSpan = document.createElement('span');
-							subWordSpan.className = 'entrySubWord';
-							$(subWordSpan).text(word[subWordIndex]);
-							if(subWordIndex < word.length-2)
-								$(subWordSpan).text($(subWordSpan).text()+', ');
-							wordLi.appendChild(subWordSpan);
-						}
-		
-						if(typeof word[word.length-1] === 'string'){
-			
-							var wordDesc = document.createElement('p');
-							wordDesc.className = 'entryWordDesc';
-							$(wordDesc).text(word[word.length-1]);
-							wordLi.appendChild(wordDesc);
-			
-						}
-		
+				// Check for a description
+				if(word[1] !== null){
+					// Create a <p> for the descrption
+					var wordDesc = document.createElement('p');
+					// Set the class and text, add it to the word block
+					wordDesc.className = 'entryWordDesc';
+					$(wordDesc).text(word[word.length-1]);
+					wordBlock.appendChild(wordDesc);
+					// Add dictionary data if editable
+					if(coders.editMode){
+						$(wordDesc).attr('contentEditable','true');
+						$(wordDesc).attr('data-entry-index',i);
+						$(wordDesc).attr('data-word-index',j);
+						$(wordDesc).blur(wordDescEditHandler);
 					}
-		
-					// Add the description if there is one
-					if(entry.desc.length){
-						var desc = document.createElement('p');
-						desc.className = 'entryDesc';
-						$(desc).text(entry.desc);
-						block.appendChild(desc);
-					}
-
 				}
 
 			}
 
+			// Add the description if there is one
+			if(entry.desc.length){
+				var desc = document.createElement('p');
+				desc.className = 'entryDesc';
+				$(desc).text(entry.desc);
+				block.appendChild(desc);
+				// Add dictionary data if editable
+				if(coders.editMode){
+					$(desc).attr('contentEditable','true');
+					$(desc).attr('data-entry-index',i);
+					$(desc).blur(descEditHandler);
+				}
+			}
+
+			// Add the tags
+			var tags = document.createElement('p');
+			tags.className = 'entryTags';
+			$(tags).text(entry.tags.sort().join(', '));
+			block.appendChild(tags);
+			// Add dictionary data if editable
+			if(coders.editMode){
+				$(tags).attr('contentEditable','true');
+				$(tags).attr('data-entry-index',i);
+				$(tags).blur(tagsEditHandler);
+			}
+
 		}
 
+	},
+
+	selectTag: function(name){
+		var index = coders.tagList.indexOf(name);
+		$('.tagSelected').removeClass('tagSelected');
+		if(name === null || index === -1){
+			// Null or invalid, select "All"
+			coders.selectedTag = null;
+			coders.selectedTagIndex = -1;
+			$('#tag-all').addClass('tagSelected');
+			$('#header').text('All terms');
+		}
+		else{
+			// Valid tag name, select it
+			coders.selectedTag = name;
+			coders.selectedTagIndex = index;
+			$('#tag-'+index).addClass('tagSelected');
+			$('#header').text('Tag: '+name);
+		}
+		coders.updateTagArrow();
+		coders.refreshAllEntries();
 	},
 
 	// Searching
 
 	refreshAllEntries: function(){
-		// Check if any tag is selected
-		if(coders.selectedTag !== null){
-			// Yes, hide all but the selected tag
-			$('.entrySection').hide();
-			$('#entrySection-'+coders.tagList.indexOf(coders.selectedTag)).show();
-		}
-		else{
-			// No, show every tag section
-			$('.entrySection').show();
-		}
-		// Unhighlight any highlighted words
-		coders.unhighlightAll();
-		// Check if filtering entries
-		if($('#searchBox').val()){
-			// Show the search arrow
-			coders.showSearchArrow();
-			// Show the entries
-			coders.showSearchedEntries();
-		}
-		else{
-			// Hide the search arrow
-			coders.hideSearchArrow();
-			// Show all the entries
-			coders.showAll();
-		}
-	},
 
-	showSearchedEntries: function(){
-		var i, wordI, tagI, entryVisible,
-			visibleTags = [],
-			filter = $('#searchBox').val();
-		// Loop through the entries
-		for(i=0;i<coders.entries.length;i++){
-			// Cache the entry
-			var entry = coders.entries[i];
+		var filter = $('#searchBox').val();
+		var hasFilter = filter.length > 0;
+
+		coders.unhighlightAll();
+
+		for(var i=0;i<dict.length;i++){
+			var entry = dict[i];
+			if(coders.selectedTag !== null && entry.tags.indexOf(coders.selectedTag) === -1){
+				$('#entry'+i).hide();
+				continue;
+			}
+			if(!hasFilter){
+				$('#entry'+i).show();
+				continue;
+			}
 			// Keep a flag denoting if the entry is visible
-			entryVisible = false;
+			var entryVisible = false;
 			// Loop through each word in the entry
-			for(var wordIndex=0;wordIndex<entry.words.length;wordIndex++){
+			for(var wordI=0;wordI<entry.words.length;wordI++){
 				// Check if the word is visible
-				if(coders.doesWordMatch(entry.words[wordIndex],filter)){
+				if(coders.doesWordMatch(entry.words[wordI],filter)){
 					// Highlight the word and set the entry as visible
-					$($('#entry'+i)[0].children[0].children[wordIndex]).addClass('entryWordHighlighted');
+					$($('#entry'+i)[0].childNodes[0].childNodes[wordI]).addClass('entryBlockHighlighted');
 					entryVisible = true;
 				}
 			}
 			// Show or hide the entry
 			if(entryVisible){
-				coders.showEntry(i);
+				$('#entry'+i).show();
 			}
 			else{
-				coders.hideEntry(i);
+				$('#entry'+i).hide();
 			}
 		}
-	},
-
-	isEntrySectionVisible: function(entry){
-		// Return true if all tags are selected
-		if(coders.selectedTag === null){
-			return true;
-		}
-		// Else loop through the entry's tags
-		for(var i=0;i<entry.tags.length;i++){
-			// Return true if it matches the selected tag
-			if(coders.selectedTag === entry.tags[i]){
-				return true;
-			}
-		}
-		// Else no matches, return false
-		return false;
 	},
 
 	doesWordMatch: function(word,filter){
-		// Loop though each word, minus 1 for the description
-		for(var i=0;i<word.length-1;i++){
-			// Return true if its visible per the search
-			if(coders.doesStringMatch(word[i],filter)){
-				return true;
-			}
-		}
-		// Search the word desc
-		if(coders.searchWordDesc && word[word.length-1] !== null && coders.doesStringMatch(word[word.length-1],filter)){
+		// Check the word itself
+		if(coders.doesStringMatch(word[0],filter)){
 			return true;
 		}
-		// Else no matches, return false
-		return false;
+		// Search the word desc
+		return coders.searchWordDesc && word[1] !== null && coders.doesStringMatch(word[1],filter);
 	},
 
 	doesStringMatch: function(string,filter){
-		// Use indexOf if case sensitive, else use a case insensitive RegExp
+		// Use indexOf if case sensitive, else use a case insensitive
 		return (coders.caseSensitiveSearch ? string.indexOf(filter) : string.search(new RegExp(filter,'i'))) >= 0;
 	},
 
 	unhighlightAll: function(){
 		// Remove the highlighted class
-		$('.entryWordHighlighted').removeClass('entryWordHighlighted');
+		$('.entryBlockHighlighted').removeClass('entryBlockHighlighted');
 	},
 
 	// Arrow Hiding/Showing
 
-	showSearchArrow: function(){
-		// Get the sidebar element
-		var sidebar = $('#sidebar')[0];
-		// Position and show the arrow
+	updateSearchArrow: function(){
 		var searchBox = $('#searchBox');
-		var searchArrow = $('#searchArrow');
-		searchArrow[0].style.left = sidebar.offsetLeft+sidebar.offsetWidth-16+'px';
-		searchArrow[0].style.top = searchBox[0].offsetTop+searchBox[0].offsetHeight/2-16+'px';
-		searchArrow.show();
+		if(searchBox.val().length){
+			// Get the sidebar element
+			var sidebar = $('#sidebar')[0];
+			// Position and show the arrow
+			var searchArrow = $('#searchArrow');
+			searchArrow[0].style.left = sidebar.offsetLeft+sidebar.offsetWidth-16+'px';
+			searchArrow[0].style.top = searchBox[0].offsetTop+searchBox[0].offsetHeight/2-16+'px';
+			searchArrow.show();
+		}
+		else{
+			$('#searchArrow').hide();
+		}
 	},
 
-	hideSearchArrow: function(){
-		$('#searchArrow').hide();
-	},
-
-	showTagArrow: function(target){
-		// Get the sidebar element
-		var sidebar = $('#sidebar')[0];
-		// Position and show the arrow
-		var arrow = $('#tagArrow');
-		arrow[0].style.top = target.offsetTop+target.offsetHeight/2-16+'px';
-		arrow[0].style.left = sidebar.offsetLeft+sidebar.offsetWidth-16+'px';
-		arrow.show();
-	},
-
-	hideTagArrow: function(){
-		$('#tagArrow').hide();
-	},
-
-	// Entry Hiding/Showing
-
-	showEntry: function(index){
-		$('#entry'+index).show();
-	},
-
-	hideEntry: function(index){
-		$('#entry'+index).hide();
-	},
-
-	hideAll: function(){
-		$('.entryBlock').hide();
-	},
-
-	showAll: function(){
-		$('.entryBlock').show();
+	updateTagArrow: function(){
+		if(coders.selectedTag === null){
+			$('#tagArrow').hide();
+		}
+		else{
+			var target = $('#tag-'+coders.selectedTagIndex)[0];
+			// Get the sidebar element
+			var sidebar = $('#sidebar')[0];
+			// Position and show the arrow
+			var arrow = $('#tagArrow');
+			arrow[0].style.top = target.offsetTop+target.offsetHeight/2-16+'px';
+			arrow[0].style.left = sidebar.offsetLeft+sidebar.offsetWidth-16+'px';
+			arrow.show();
+		}
 	},
 
 	// Dictionary manipulation
@@ -339,7 +417,6 @@ coders = {
 	uncompressDictionary: function(){
 		// Loop through the entries
 		for(var i=0;i<dict.length;i++){
-			// Cache the entry
 			var entry = dict[i];
 			// Expand a single word into a subword array
 			if(typeof entry.word === 'string'){
@@ -362,16 +439,29 @@ coders = {
 					}
 				}
 			}
-			// Set an empty tag array if undefined
-			if(typeof entry.tags === 'undefined'){
-				console.warn('Dictionary entry '+i+' is without tag array');
-				entry.tags = [];
+			// Check for a tags array
+			if(!(entry.tags instanceof Array)){
+				// Check for a single tag if not defined
+				if(typeof entry.tag === 'string'){
+					entry.tags = [entry.tag];
+					delete entry.tag;
+				}
+				// Else no tags, print a warning
+				else{
+					coders.warn('Dictionary entry '+i+' is without tag string or tags array');
+					entry.tags = [];
+				}
 			}
 			// Set an empty description if undefined
 			if(typeof entry.desc === 'undefined'){
 				entry.desc = '';
 			}
 		}
+	},
+
+	exportDictionary: function(){
+		// TODO: Dictionary compression
+		window.open('data:text/json;charset=utf-8,'+JSON.stringify(dict));
 	}
 
 };

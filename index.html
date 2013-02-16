@@ -16,12 +16,24 @@
 			<p id="searchTitle">Search:</p>
 			<input type="textbox" id="searchBox">
 			<p id="tagListTitle">Tags:</p>
-			<div id="tagList" class="tagList">
+			<div class="tagList">
 				<p id="tag-all" class="tag tagSelected">All</p>
+				<div id="tagList">
+					<!-- Tags are inserted here -->
+				</div>
 			</div>
 		</div>
 		<img id="searchArrow" src="arrow.png">
 		<img id="tagArrow" src="arrow.png">
-		<div id="content"><div id="entries"></div></div>
+		<div id="content">
+			<div id="scrollPane">
+				<p id="header" class="header">
+					<!-- Selected tag is given here as a header -->
+				</p>
+				<div id="entries">
+					<!-- Entries are inserted here -->
+				</div>
+			</div>
+		</div>
 	</body>
 </html>
