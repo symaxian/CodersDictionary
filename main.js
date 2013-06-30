@@ -18,9 +18,11 @@ coders = {
 
 	caseSensitiveSearch: false,
 
-	searchWordDesc: true,
+	searchWordMeaning: true,
 
 	editMode: false,
+
+	urlParams: null,
 
 		// Data
 
@@ -36,16 +38,22 @@ coders = {
 
 		// Methods
 
-	warn: function(msg){
-		if(typeof console === 'object'){
-			console.warn('CodersDictionary: '+msg);
+	getUrlParameters: function(){
+		for(var i=0, vars = {}, param, paramArray = window.location.href.slice(window.location.href.indexOf('?')+1).split('&');i<paramArray.length;i++){
+			param = paramArray[i].split('=');
+			vars[param[0]] = param[1];
 		}
+		return vars;
 	},
 
 	init: function(){
 
 		// Uncompress the dictionary
 		coders.uncompressDictionary();
+
+		// Get the params
+		coders.urlParams = coders.getUrlParameters();
+		coders.editMode = coders.urlParams.edit === 'true';
 
 		// Hide the arrows
 		$('#searchArrow, #tagArrow').hide();
@@ -73,27 +81,37 @@ coders = {
 						desc: '<desc>',
 						tags: ['<tag>']
 					});
-					coders.updatePageEntries();
+					coders.rebuildPage();
 				}
 				else if(e.keyCode === 107){
 					// Numeric +
 					dict[index].words.push(['<word>','<desc>']);
-					coders.updatePageEntries();
+					coders.rebuildPage();
 				}
 				else if(e.keyCode === 13 && !dict[index].desc){
 					// Numeric Enter
 					dict[index].desc = '<desc>';
-					coders.updatePageEntries();
+					coders.rebuildPage();
 				}
 			});
 		}
 
 		// Insert the entries onto the page
-		coders.updatePageEntries();
+		coders.rebuildPage();
 
 	},
 
-	updatePageEntries: function(){
+	scrollToTerm: function(term){
+		coders.scrollToTermAt(coders.indexOfTerm(term));
+	},
+
+	scrollToTermAt: function(index){
+		$('html, body').animate({
+			scrollTop: $("#entry"+index).offset().top
+		}, 100);
+	},
+
+	rebuildPage: function(){
 
 		// Empty the tags and entries
 		$('#tagList').empty();
@@ -121,7 +139,7 @@ coders = {
 	},
 
 	insertPageEntries: function(){
- 
+
 		// Get the tag list container, <p>
 		var tagListDiv = $('#tagList')[0];
 
@@ -133,61 +151,77 @@ coders = {
 			coders.hoveredEntry = parseInt($(this).attr('data-entry-index'),10);
 		};
 
-		var wordEditHandler = function(e){
+		var termEdit = function(){
 			// Get the properties
 			var text = $(this).text();
-			var entryIndex = parseInt($(this).attr('data-entry-index'),10);
-			var wordIndex = parseInt($(this).attr('data-word-index'),10);
+			var index = parseInt($(this).attr('data-index'),10);
 			// Set the text, or delete the word if there is no text
 			if(text.length){
-				dict[entryIndex].words[wordIndex][0] = text;
+				dict[index].term = text;
 			}
 			else{
-				// No text, delete the word
-				dict[entryIndex].words.splice(wordIndex,1);
-				// Delete the entry if there are no words left
-				if(dict[entryIndex].words.length === 0){
-					dict.splice(entryIndex,1);
-				}
+				// No text, delete the term
+				dict.splice(index,1);
 				// Rebuild the page
-				coders.updatePageEntries();
+				coders.rebuildPage();
 			}
 		};
 
-		var wordDescEditHandler = function(e){
-			// Get the properties
-			var text = $(this).text();
-			var entryIndex = parseInt($(this).attr('data-entry-index'),10);
-			var wordIndex = parseInt($(this).attr('data-word-index'),10);
-			// Set the text, or null
-			if(text.length === 0){
-				text = null;
+		var mainMeaningValueEdit = function(){
+			var index = parseInt($(this).attr('data-index'),10);
+			var value = $(this).text();
+			if(!value.length){
+				value = '< universal meaning >';
 			}
-			dict[entryIndex].words[wordIndex][1] = text;
-			if(text === null){
-				coders.updatePageEntries();
+			dict[index].meaning = value;
+			coders.rebuildPage();
+		};
+
+		var meaningContextEdit = function(){
+			var index = parseInt($(this).attr('data-index'),10);
+			var oldKey = $(this).attr('data-key');
+			var newKey = $(this).text();
+			if(newKey.length){
+				var value = dict[index].meanings[oldKey];
+				dict[index].meanings[newKey] = value;
+				delete dict[index].meanings[oldKey];
+				$(this).attr('data-key',newKey);
+			}
+			else{
+				delete dict[index].meanings[oldKey];
+				coders.rebuildPage();
 			}
 		};
 
-		var descEditHandler = function(e){
-			// Get the properties
-			var text = $(this).text();
-			var entryIndex = parseInt($(this).attr('data-entry-index'),10);
-			// Set the text
-			dict[entryIndex].desc = text;
+		var defMeaningEdit = function(){
+			var index = parseInt($(this).attr('data-index'),10);
+			var key = $(this).attr('data-key');
+			var value = $(this).text();
+			if(value.length){
+				value = dict[index].meanings[key];
+				dict[index].meanings[key] = value;
+			}
+			else{
+				delete dict[index].meanings[key];
+				coders.rebuildPage();
+			}
 		};
 
-		var tagsEditHandler = function(e){
-			// Get the properties
-			var entryIndex = parseInt($(this).attr('data-entry-index'),10);
-			var tags = $(this).text().split(',');
-			// Trim the tags
-			for(var i=0;i<tags.length;i++){
-				tags[i] = $.trim(tags[i]);
+		var seeAlsoClick = function(){
+			coders.scrollToTerm($(this).text());
+		};
+
+		var seeAlsoEdit = function(){
+			var index = parseInt($(this).attr('data-index'),10);
+			var seeAlsoIndex = $(this).attr('data-seealso-index');
+			var value = $(this).text();
+			if(value.length){
+				dict[index].seeAlso[seeAlsoIndex] = value;
 			}
-			// Set the tags
-			dict[entryIndex].tags = tags;
-			coders.updatePageEntries();
+			else{
+				dict[index].seeAlso.splice(seeAlsoIndex,1);
+				coders.rebuildPage();
+			}
 		};
 
 		// Loop through the tags
@@ -204,15 +238,15 @@ coders = {
 		}
 
 		// Loop through the entries
-		for(var i=0;i<dict.length;i++){
+		for(var entryI=0;entryI<dict.length;entryI++){
 
-			var entry = dict[i];
+			var entry = dict[entryI];
 
 			// Create the entry block
 			var block = document.createElement('div');
 			block.className = 'entryBlock';
-			block.id = 'entry'+i;
-			$(block).attr('data-entry-index',i);
+			block.id = 'entry'+entryI;
+			$(block).attr('data-entry-index',entryI);
 			$(block).hover(entryHoverHandler);
 			$('#entries')[0].appendChild(block);
 			// Add a title if editable
@@ -220,78 +254,137 @@ coders = {
 				block.title = 'Entry: '+i;
 			}
 
-			// Create the word list for the entry
-			var wordList = document.createElement('ul');
-			wordList.className = 'entryWordList';
-			block.appendChild(wordList);
-	
-			// Loop through the words
-			for(var j=0;j<entry.words.length;j++){
-
-				var word = entry.words[j];
-
-				// Create the word block element
-				var wordBlock = document.createElement('li');
-				wordBlock.className = 'entryWordBlock';
-				wordList.appendChild(wordBlock);
-
-				// Create a span for the word
-				var wordSpan = document.createElement('span');
-				// Set the class and text, add it to the word block
-				wordSpan.className = 'entryWord';
-				$(wordSpan).text(word[0]);
-				wordBlock.appendChild(wordSpan);
-				// Add dictionary data if editable
-				if(coders.editMode){
-					$(wordSpan).attr('contentEditable','true');
-					$(wordSpan).attr('data-entry-index',i);
-					$(wordSpan).attr('data-word-index',j);
-					$(wordSpan).blur(wordEditHandler);
-				}
-
-				// Check for a description
-				if(word[1] !== null){
-					// Create a <p> for the descrption
-					var wordDesc = document.createElement('p');
-					// Set the class and text, add it to the word block
-					wordDesc.className = 'entryWordDesc';
-					$(wordDesc).text(word[word.length-1]);
-					wordBlock.appendChild(wordDesc);
-					// Add dictionary data if editable
-					if(coders.editMode){
-						$(wordDesc).attr('contentEditable','true');
-						$(wordDesc).attr('data-entry-index',i);
-						$(wordDesc).attr('data-word-index',j);
-						$(wordDesc).blur(wordDescEditHandler);
-					}
-				}
-
-			}
-
-			// Add the description if there is one
-			if(entry.desc.length){
-				var desc = document.createElement('p');
-				desc.className = 'entryDesc';
-				$(desc).text(entry.desc);
-				block.appendChild(desc);
-				// Add dictionary data if editable
-				if(coders.editMode){
-					$(desc).attr('contentEditable','true');
-					$(desc).attr('data-entry-index',i);
-					$(desc).blur(descEditHandler);
-				}
-			}
-
-			// Add the tags
-			var tags = document.createElement('p');
-			tags.className = 'entryTags';
-			$(tags).text(entry.tags.sort().join(', '));
-			block.appendChild(tags);
-			// Add dictionary data if editable
+			// Term
+			var term = document.createElement('p');
+			term.className = 'entryTerm';
+			term.innerText = entry.term;
+			block.appendChild(term);
 			if(coders.editMode){
-				$(tags).attr('contentEditable','true');
-				$(tags).attr('data-entry-index',i);
-				$(tags).blur(tagsEditHandler);
+				$(term).
+					attr('contentEditable','true').
+					attr('data-index',entryI).
+					blur(termEdit);
+			}
+
+			// Meaning list, <dl>
+			var entryMeaningList = document.createElement('dl');
+			entryMeaningList.className = 'entryMeaningList';
+			block.appendChild(entryMeaningList);
+
+			// Main meaning
+			var meaningContext = document.createElement('dt');
+			meaningContext.className = 'entryMeaningContext';
+			entryMeaningList.appendChild(meaningContext);
+
+			var meaningValue = document.createElement('dd');
+			meaningValue.className = 'entryMeaningValue';
+			meaningValue.innerText = entry.meaning;
+			entryMeaningList.appendChild(meaningValue);
+			if(coders.editMode){
+				$(meaningValue).
+					attr('contentEditable','true').
+					attr('data-index',entryI).
+					blur(mainMeaningValueEdit);
+			}
+
+			// Loop through the meanings
+			for(var context in entry.meanings){
+
+				// dt
+				meaningContext = document.createElement('dt');
+				meaningContext.className = 'entryMeaningContext';
+				meaningContext.innerText = context;
+				entryMeaningList.appendChild(meaningContext);
+				if(coders.editMode){
+					var myEntry = entry;
+					var myIndex = i;
+					$(meaningContext).
+						attr('contentEditable','true').
+						attr('data-index',entryI).
+						attr('data-key',context).
+						blur(meaningContextEdit);
+				}
+
+				// dd
+				meaningValue = document.createElement('dd');
+				meaningValue.className = 'entryMeaningValue';
+				meaningValue.innerText = entry.meanings[context];
+				entryMeaningList.appendChild(meaningValue);
+				if(coders.editMode){
+					$(meaningValue).
+						attr('contentEditable','true').
+						attr('data-index',entryI).
+						attr('data-key',context).
+						blur(defMeaningEdit);
+				}
+
+			}
+
+			// Check for any "See Also" terms
+			if(entry.seeAlso.length){
+
+				var seeAlsoP = document.createElement('p');
+				block.appendChild(seeAlsoP);
+
+				var seeAlsoHeader = document.createElement('span');
+				seeAlsoHeader.className = 'seeAlsoHeader';
+				$(seeAlsoHeader).text('See Also: ');
+				seeAlsoP.appendChild(seeAlsoHeader);
+
+				// Loop through the seeAlso's
+				for(var i=0;i<entry.seeAlso.length;i+=2){
+
+					var seeAlsoTerm = document.createElement('span');
+					seeAlsoTerm.className = 'seeAlsoTerm';
+					seeAlsoTerm.innerText = entry.seeAlso[i];
+					seeAlsoP.appendChild(seeAlsoTerm);
+					if(coders.editMode){
+						$(seeAlsoTerm).
+							attr('contentEditable','true').
+							attr('data-index',entryI).
+							attr('data-seeAlso-index',i).
+							blur(seeAlsoEdit);
+					}
+					else{
+						$(seeAlsoTerm).click(seeAlsoClick);
+					}
+
+					if(i < entry.seeAlso.length-2){
+						var temp = document.createElement('span');
+						$(temp).text(', ');
+						seeAlsoP.appendChild(temp);
+					}
+
+				}
+
+			}
+
+			if(coders.editMode){
+
+				// Add meaning link
+				var addMeaningLink = document.createElement('a');
+				addMeaningLink.className = 'editLink';
+				$(addMeaningLink).text('Add meaning');
+				$(addMeaningLink).attr('data-index',entryI);
+				$(addMeaningLink).click(function(){
+					var index = parseInt($(this).attr('data-index'),10);
+					coders.addMeaningAt(index,'< context >','< meaning within that context >');
+					coders.rebuildPage();
+				});
+				block.appendChild(addMeaningLink);
+
+				// Add seeAlso link
+				var addSeeAlsoLink = document.createElement('a');
+				addSeeAlsoLink.className = 'editLink';
+				$(addSeeAlsoLink).text(' - Add see-also term');
+				$(addSeeAlsoLink).attr('data-index',entryI);
+				$(addSeeAlsoLink).click(function(){
+					var index = parseInt($(this).attr('data-index'),10);
+					coders.addSeeAlsoAt(index,'< term >');
+					coders.rebuildPage();
+				});
+				block.appendChild(addSeeAlsoLink);
+
 			}
 
 		}
@@ -340,14 +433,17 @@ coders = {
 			}
 			// Keep a flag denoting if the entry is visible
 			var entryVisible = false;
-			// Loop through each word in the entry
-			for(var wordI=0;wordI<entry.words.length;wordI++){
-				// Check if the word is visible
-				if(coders.doesWordMatch(entry.words[wordI],filter)){
-					// Highlight the word and set the entry as visible
-					$($('#entry'+i)[0].childNodes[0].childNodes[wordI]).addClass('entryBlockHighlighted');
-					entryVisible = true;
-				}
+			// Check if the word matches
+			if(coders.doesStringMatch(entry.term,filter)){
+				// Highlight the word and set the entry as visible
+				$($('#entry'+i)[0].childNodes[0]).addClass('entryBlockHighlighted');
+				entryVisible = true;
+			}
+			// Check if the meaning matches
+			if(coders.searchWordMeaning && coders.doesStringMatch(entry.meaning,filter)){
+				// Highlight the word and set the entry as visible
+				$($('#entry'+i)[0].childNodes[1]).addClass('entryBlockHighlighted');
+				entryVisible = true;
 			}
 			// Show or hide the entry
 			if(entryVisible){
@@ -357,15 +453,6 @@ coders = {
 				$('#entry'+i).hide();
 			}
 		}
-	},
-
-	doesWordMatch: function(word,filter){
-		// Check the word itself
-		if(coders.doesStringMatch(word[0],filter)){
-			return true;
-		}
-		// Search the word desc
-		return coders.searchWordDesc && word[1] !== null && coders.doesStringMatch(word[1],filter);
 	},
 
 	doesStringMatch: function(string,filter){
@@ -414,54 +501,49 @@ coders = {
 
 	// Dictionary manipulation
 
+	indexOfTerm: function(term){
+		for(var i=0;i<dict.length;i++){
+			if(dict[i].term === term){
+				return i;
+			}
+		}
+		return -1;
+	},
+
+	updateTermAt: function(index,term){
+		dict[index].term = term;
+	},
+
+	setMainMeaningAt: function(index,meaning){
+		dict[index].meaning = meaning;
+	},
+
+	addMeaningAt: function(index,context,meaning){
+		dict[index].meanings[context] = meaning;
+	},
+
+	addSeeAlsoAt: function(index,term){
+		dict[index].seeAlso.push(term);
+	},
+
 	uncompressDictionary: function(){
 		// Loop through the entries
 		for(var i=0;i<dict.length;i++){
 			var entry = dict[i];
-			// Expand a single word into a subword array
-			if(typeof entry.word === 'string'){
-				entry.words = [[entry.word,null]];
-				delete entry.word;
+			// Set empty meanings if undefined
+			if(typeof entry.meanings === 'undefined'){
+				entry.meanings = {};
 			}
-			// Expand a single word array into a subword array
-			else if(typeof entry.word === 'object'){
-				entry.words = [entry.word];
-				delete entry.word;
-			}
-			// Add null descriptions to single subwords and expand single words
-			else{
-				for(var wordI=0;wordI<entry.words.length;wordI++){
-					if(typeof entry.words[wordI] === 'string'){
-						entry.words[wordI] = [entry.words[wordI],null];
-					}
-					else if(entry.words[wordI].length === 1){
-						entry.words[wordI].push(null);
-					}
-				}
-			}
-			// Check for a tags array
-			if(!(entry.tags instanceof Array)){
-				// Check for a single tag if not defined
-				if(typeof entry.tag === 'string'){
-					entry.tags = [entry.tag];
-					delete entry.tag;
-				}
-				// Else no tags, print a warning
-				else{
-					coders.warn('Dictionary entry '+i+' is without tag string or tags array');
-					entry.tags = [];
-				}
-			}
-			// Set an empty description if undefined
-			if(typeof entry.desc === 'undefined'){
-				entry.desc = '';
+			// Set empty seeAlso if undefined
+			if(typeof entry.seeAlso === 'undefined'){
+				entry.seeAlso = [];
 			}
 		}
 	},
 
 	exportDictionary: function(){
 		// TODO: Dictionary compression
-		window.open('data:text/json;charset=utf-8,'+JSON.stringify(dict));
+		window.open('data:text/json;charset=utf-8,var dict='+JSON.stringify(dict)+';');
 	}
 
 };
